@@ -31,6 +31,7 @@ a10 = XPU(name="A10", bytes_per_sec=600e9, flop_per_sec=125e12, capacity=24e9)
 a10g = XPU(name="A10G", bytes_per_sec=600e9, flop_per_sec=31.52e12, capacity=24e9)
 a100 = XPU(name="A100", bytes_per_sec=1560e9, flop_per_sec=312e12, capacity=40e9)
 h100 = XPU(name="H100", bytes_per_sec=2040e9, flop_per_sec=756e12, capacity=80e9)
+rtx3090 = XPU(name="3090", bytes_per_sec=936.2e9, flop_per_sec=35e12, capacity=24e9)
 
 
 def speedup_theoretical_time_in_attn(
