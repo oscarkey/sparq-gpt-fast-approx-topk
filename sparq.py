@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+import approx_topk
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -37,6 +38,8 @@ class SparQArgs:
     # memory accesses. In our experiments we found it was faster not to sort.
     sort_stage_1_top_k: bool = False
     sort_stage_2_top_k: bool = False
+    approx_topk_j: int | None = None
+    approx_topk_mtb: bool | None = None
 
 
 def get_r_k_for_compression_ratio(
@@ -248,7 +251,17 @@ def sparq_attn(
     # 2. Gather top k2 positions based on approximate attention scores & run attention
     # This min ensures that k <= sequence length, otherwise torch.compile() will crash.
     k = min(k, V.shape[-2])
-    s_hat_i2, i2 = torch.topk(s_hat, k, dim=-1, sorted=config.sort_stage_2_top_k)
+    if config.approx_topk_j is None:
+        s_hat_i2, i2 = torch.topk(s_hat, k, dim=-1, sorted=config.sort_stage_2_top_k)
+    else:
+        assert not config.sort_stage_2_top_k
+        s_hat_i2, i2 = approx_topk.priority_queue.topk(
+            s_hat,
+            k,
+            dim=-1,
+            j=config.approx_topk_j,
+            multithread_buckets=config.approx_topk_mtb,
+        )
     iKV = i2[..., 0, :, None]
     QK = Q @ _gather(K2, -2, iKV).transpose(2, 3)
     masked_QK = torch.where(_gather(mask.expand_as(QK_hat), -1, i2), QK, float("-inf"))

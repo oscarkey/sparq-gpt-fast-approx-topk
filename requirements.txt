@@ -1,4 +1,4 @@
-torch>=2.4
+torch==2.4
 numpy
 sentencepiece
 tiktoken
@@ -11,3 +11,4 @@ black
 pytest
 git+https://github.com/oscarkey/typed-configs.git
 typed-argument-parser
+git+https://github.com/graphcore-research/pytorch-approx-topk.git

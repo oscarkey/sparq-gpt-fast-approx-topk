@@ -5,7 +5,7 @@
 # This source code is licensed under the BSD-3 license,
 # see the LICENSE file in the root directory of this source tree.
 
-
+import itertools
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -34,6 +34,18 @@ benchmarks["SparQ (1/8)"] = [
     )
     for prompt_length in prompt_lengths
 ]
+for j, mtb in itertools.product([1, 2], [False, True]):
+    benchmarks[f"SparQ (1/8) (approx j={j}, mtb={mtb})"] = [
+        Benchmark(
+            **base_config,
+            attention="sparq",
+            prompt_length=prompt_length,
+            sparq=SparQArgs(
+                rk=RKForCompressionRatio(8), approx_topk_j=j, approx_topk_mtb=mtb
+            ),
+        )
+        for prompt_length in prompt_lengths
+    ]
 results = {k: [run_or_load(b) for b in bs] for k, bs in benchmarks.items()}
 
 fig, axes = plt.subplots(ncols=2, figsize=(8, 5))
