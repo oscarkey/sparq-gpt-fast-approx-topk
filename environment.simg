@@ -1,0 +1,16 @@
+# Build the image: apptainer build environment.sif environment.simg
+# Run the image: apptainer exec --nv environment.sif python experiments/...
+
+Bootstrap: docker
+From: pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel
+
+%files
+    requirements.txt /requirements.txt
+
+%post
+    apt update -y
+    apt install -y git
+    pip install -r /requirements.txt
+
+%environment
+    export CUDA_HOME=/usr/local/cuda/
