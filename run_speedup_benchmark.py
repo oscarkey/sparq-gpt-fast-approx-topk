@@ -59,7 +59,7 @@ results = {k: [run_or_load(b) for b in bs] for k, bs in benchmarks.items()}
 
 plt.rc("text", usetex=True)
 plt.rc("text.latex", preamble=r"\usepackage{amsmath} \usepackage{amsfonts}")
-plt.rc("font", family="serif", serif="CMU Serif")
+plt.rc("font", family="serif", serif="CMU Serif", size=9)
 squashed_legend_params = {
     "handlelength": 1.0,
     "handletextpad": 0.5,
@@ -68,8 +68,9 @@ squashed_legend_params = {
     "borderpad": 0.25,
     "columnspacing": 0.7,
 }
+squashed_label_params = {"labelpad": 1.5}
 
-fig, axes = plt.subplots(ncols=2, figsize=(7, 2.0))
+fig, axes = plt.subplots(ncols=2, figsize=(5.5, 1.8))
 time_ax: Axes = axes[0]
 speedup_ax: Axes = axes[1]
 labels_done = False
@@ -80,13 +81,19 @@ colors = [
     (0.29408557, 0.13721193, 0.38442775),
 ]
 markers = ["o", "s", "^", "P", "X"]
+marker_size = 5
 time_ax_handles = []
 
 for i, ((label, rs), color, marker) in enumerate(zip(results.items(), colors, markers)):
     means = [r.secs_per_token_mean for r in rs]
     stds = [r.secs_per_token_std for r in rs]
     (line,) = time_ax.plot(
-        prompt_lengths, means, marker=marker, label=label, color=color
+        prompt_lengths,
+        means,
+        marker=marker,
+        label=label,
+        color=color,
+        markersize=marker_size,
     )
     time_ax_handles.append(line)
 
@@ -95,7 +102,20 @@ for i, ((label, rs), color, marker) in enumerate(zip(results.items(), colors, ma
             dense_r.secs_per_token_mean / sparq_t
             for dense_r, sparq_t in zip(results["dense"], means)
         ]
-        speedup_ax.plot(prompt_lengths, speedups, marker=marker, color=color)
+        speedup_ax.plot(
+            prompt_lengths, speedups, marker=marker, color=color, markersize=marker_size
+        )
+
+        if "SparQ" in label and ("torch" in label or "2" in label):
+            speedup_ax.axhline(speedups[-1], color=color, linestyle="dotted")
+            speedup_ax.text(
+                s=f"${speedups[-1]:.1f} \\times $",
+                x=6_000,
+                y=speedups[-1],
+                color="white",
+                bbox=dict(facecolor=color, edgecolor="none", pad=1.5),
+                verticalalignment="center",
+            )
 
         print(label)
         for prompt_length, speedup in zip(prompt_lengths, speedups):
@@ -113,11 +133,12 @@ for i, ((label, rs), color, marker) in enumerate(zip(results.items(), colors, ma
             ],
             color="black",
             linestyle="--",
-            label="theoretical max speedup",
+            label="theoretical max",
         )
 
-time_ax.set_xlabel("prompt length")
-time_ax.set_ylabel("secs per token")
+
+time_ax.set_xlabel("prompt length", **squashed_label_params)
+time_ax.set_ylabel("secs per token", **squashed_label_params)
 time_ax.set_xlim(left=min(prompt_lengths))
 time_ax.set_ylim(bottom=0)
 time_ax.set_xticks([16, 20_000, 40_000])
@@ -130,14 +151,14 @@ legend_2 = time_ax.legend(
 time_ax.add_artist(legend_1)
 
 speedup_ax.axhline(1.0, color="black")
-speedup_ax.set_xlabel("prompt length")
-speedup_ax.set_ylabel("speedup over dense")
+speedup_ax.set_xlabel("prompt length", **squashed_label_params)
+speedup_ax.set_ylabel("speedup over dense", **squashed_label_params)
 speedup_ax.set_xlim(left=min(prompt_lengths))
 speedup_ax.set_yticks([1, 1.5, 2.0])
 speedup_ax.set_xticks([16, 20_000, 40_000])
-speedup_ax.legend(loc="upper left", **squashed_legend_params)
+speedup_ax.legend(loc="lower right", **squashed_legend_params)
 
-plt.tight_layout()
+plt.tight_layout(pad=0.5)
 figure_dir = Path("figures")
 figure_dir.mkdir(exist_ok=True)
 plt.savefig(figure_dir / "speedup_benchmark.png", dpi=300)
